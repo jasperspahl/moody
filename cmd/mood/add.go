@@ -18,6 +18,7 @@ import (
 var name string
 var value float64
 var colorStr string
+var yes bool
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
@@ -71,6 +72,23 @@ func addMood(cmd *cobra.Command, args []string) (err error) {
 	}
 	col := utils.ConvertToColor(colorStr)
 
+	if !yes {
+		// uint32 to rgba
+		r := col >> 24
+		g := col >> 16 & 0xFF
+		b := col >> 8 & 0xFF
+		//a := col & 0xFF
+		fmt.Printf("Name: %s\nValue: %f\nColor: \033[38;2;%d;%d;%dm█\033[0m\n", name, value, r, g, b)
+		validatePrompt := promptui.Prompt{
+			Label:     "Is this correct",
+			IsConfirm: true,
+		}
+		res, err := validatePrompt.Run()
+		if err != nil || res != "y" {
+			return nil
+		}
+	}
+
 	created := model.AddMood(name, value, col)
 	if !created {
 		fmt.Printf("%s is already created\n", name)
@@ -92,5 +110,6 @@ func init() {
 	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	addCmd.Flags().StringVarP(&name, "name", "n", "", "Name of the mood")
 	addCmd.Flags().Float64VarP(&value, "value", "v", 0, "Value of the mood")
-	addCmd.Flags().StringVarP(&colorStr, "color", "c", "", "Color of the mood represented in ARGB")
+	addCmd.Flags().StringVarP(&colorStr, "color", "c", "", "Color of the mood represented in RGBA or RGB")
+	addCmd.Flags().BoolVarP(&yes, "yes", "y", false, "Skip confirmation")
 }
